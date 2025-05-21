@@ -4,67 +4,130 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>VR сцена с кнопкой</title>
+  <!-- A-Frame 1.4.0 + полифиллы -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1.4.0/dist/aframe-master.min.js"></script>
   <style>
-    body { margin: 0; overflow: hidden; }
-    #enter-vr {
+    body { 
+      margin: 0; 
+      overflow: hidden; 
+      font-family: Arial, sans-serif;
+    }
+    a-scene { 
+      display: block; 
+      width: 100vw; 
+      height: 100vh; 
+    }
+    #vr-button {
       position: absolute;
-      bottom: 20px;
+      bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
       padding: 12px 24px;
-      background: #4285f4;
+      background: #4285F4;
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 24px;
       font-size: 16px;
+      font-weight: bold;
       z-index: 9999;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    #vr-button:hover {
+      background: #3367D6;
+      transform: translateX(-50%) scale(1.05);
+    }
+    #vr-button:active {
+      transform: translateX(-50%) scale(0.95);
     }
   </style>
 </head>
 <body>
+  <!-- Сцена с VR-режимом -->
   <a-scene 
     vr-mode-ui="enabled: true"
-    renderer="antialias: true"
+    renderer="antialias: true; colorManagement: true"
     webxr="optionalFeatures: local-floor; referenceSpaceType: local-floor"
+    loading-screen="enabled: false"
   >
-    <!-- Содержимое сцены -->
-    <a-box position="0 1.5 -2" color="#4CC3D9" rotation="0 45 0"></a-box>
-    <a-plane position="0 0 -4" rotation="-90 0 0" width="20" height="20" color="#7BC8A4"></a-plane>
+    <!-- 3D объекты -->
+    <a-box 
+      position="0 1.5 -2" 
+      width="1" height="1" depth="1" 
+      color="#4CC3D9"
+      animation="property: rotation; to: 0 360 0; loop: true; dur: 2000"
+    ></a-box>
+
+    <a-plane 
+      position="0 0 -4" 
+      rotation="-90 0 0" 
+      width="20" height="20" 
+      color="#7BC8A4"
+    ></a-plane>
+
     <a-sky color="#ECECEC"></a-sky>
-    
+
+    <!-- Камера -->
     <a-entity
-      camera
-      look-controls
+      camera="active: true; fov: 80" 
+      look-controls="pointerLockEnabled: false"
       position="0 1.6 0"
+      wasd-controls="enabled: false"
     ></a-entity>
   </a-scene>
 
-  <!-- Кастомная кнопка -->
-  <button id="enter-vr">Войти в VR</button>
+  <!-- Кнопка VR -->
+  <button id="vr-button">ВОЙТИ В VR</button>
 
   <script>
-    // Обработчик кнопки
-    document.querySelector('#enter-vr').addEventListener('click', function() {
-      const scene = document.querySelector('a-scene');
-      if (scene.is('vr-mode')) {
-        scene.exitVR();
-        this.textContent = 'Войти в VR';
+    // Проверка поддержки WebXR
+    document.querySelector('a-scene').addEventListener('loaded', function() {
+      const vrButton = document.getElementById('vr-button');
+      
+      if (navigator.xr) {
+        navigator.xr.isSessionSupported('immersive-vr').then(function(supported) {
+          if (supported) {
+            console.log("WebXR supported!");
+            vrButton.style.display = 'block';
+          } else {
+            console.warn("WebXR not supported — fallback to Cardboard");
+            vrButton.style.display = 'block';
+          }
+        });
       } else {
-        scene.enterVR()
-          .then(() => this.textContent = 'Выйти из VR')
-          .catch(err => console.error('VR error:', err));
+        console.warn("WebXR API not available");
+        vrButton.style.display = 'block';
       }
     });
 
-    // Скрываем кнопку при успешном входе в VR
+    // Обработчик кнопки
+    document.getElementById('vr-button').addEventListener('click', function() {
+      const scene = document.querySelector('a-scene');
+      
+      if (scene.is('vr-mode')) {
+        scene.exitVR();
+        this.textContent = 'ВОЙТИ В VR';
+      } else {
+        scene.enterVR()
+          .then(() => {
+            this.textContent = 'ВЫЙТИ ИЗ VR';
+          })
+          .catch(error => {
+            console.error('VR error:', error);
+            alert('Ошибка входа в VR. Проверьте:\n1. Подключение гарнитуры\n2. Разрешения браузера');
+          });
+      }
+    });
+
+    // Скрыть кнопку в VR-режиме
     document.querySelector('a-scene').addEventListener('enter-vr', function() {
-      document.getElementById('enter-vr').style.display = 'none';
+      document.getElementById('vr-button').style.display = 'none';
     });
     
     document.querySelector('a-scene').addEventListener('exit-vr', function() {
-      document.getElementById('enter-vr').style.display = 'block';
+      document.getElementById('vr-button').style.display = 'block';
     });
   </script>
 </body>
