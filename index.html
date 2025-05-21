@@ -3,47 +3,64 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>VR Test для телефона</title>
-  <!-- A-Frame -->
+  <title>Рабочая VR-сцена</title>
+  <!-- A-Frame 1.4.0 + полифиллы для WebXR -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <!-- Анимации -->
-  <script src="https://aframe.io/releases/1.4.0/aframe-animation-component.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1.4.0/dist/aframe-master.min.js"></script>
   <style>
     body { margin: 0; overflow: hidden; }
+    a-scene { display: block; width: 100vw; height: 100vh; }
   </style>
 </head>
 <body>
+  <!-- Сцена с принудительным WebXR -->
   <a-scene 
+    vr-mode-ui="enabled: true"
+    renderer="antialias: true; colorManagement: true"
+    webxr="optionalFeatures: local-floor; referenceSpaceType: local-floor"
     loading-screen="enabled: false"
-    xr-mode-ui="enabled: true"
-    renderer="antialias: true"
   >
-    <!-- Красный вращающийся куб -->
+    <!-- Синий куб с анимацией -->
     <a-box 
-      position="0 1.5 -3" 
-      rotation="0 45 0" 
-      color="#FF3366"
-      animation="property: rotation; to: 0 360 0; loop: true; dur: 5000"
+      position="0 1.5 -2" 
+      width="1" height="1" depth="1" 
+      color="#4CC3D9"
+      animation="property: rotation; to: 0 360 0; loop: true; dur: 2000"
     ></a-box>
 
-    <!-- Зелёная плоскость (пол) -->
+    <!-- Пол -->
     <a-plane 
       position="0 0 -4" 
       rotation="-90 0 0" 
-      width="10" 
-      height="10" 
+      width="20" height="20" 
       color="#7BC8A4"
     ></a-plane>
 
-    <!-- Небо -->
+    <!-- Фон -->
     <a-sky color="#ECECEC"></a-sky>
 
-    <!-- Камера с VR-режимом -->
-    <a-entity 
-      camera="fov: 80" 
-      look-controls 
+    <!-- Камера с явным указанием WebXR -->
+    <a-entity
+      camera="active: true; fov: 80" 
+      look-controls="pointerLockEnabled: false"
       position="0 1.6 0"
+      wasd-controls="enabled: false"
     ></a-entity>
   </a-scene>
+
+  <!-- Скрипт для принудительной активации WebXR -->
+  <script>
+    document.querySelector('a-scene').addEventListener('loaded', function() {
+      if (navigator.xr) {
+        navigator.xr.isSessionSupported('immersive-vr').then(function(supported) {
+          if (supported) {
+            console.log("WebXR supported!");
+          } else {
+            console.warn("WebXR not supported — fallback to Cardboard");
+          }
+        });
+      }
+    });
+  </script>
 </body>
 </html>
