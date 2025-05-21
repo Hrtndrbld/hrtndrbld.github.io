@@ -1,94 +1,110 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>Простой WebXR пример</title>
-  <style>
-    body { margin: 0; overflow: hidden; }
-    button {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      padding: 12px 24px;
-      font-size: 16px;
-      z-index: 1;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Простой WebXR пример</title>
+<style>
+  body { margin: 0; overflow: hidden; font-family: sans-serif; }
+  #enter-vr {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 12px 24px;
+    font-size: 16px;
+    z-index: 1;
+    background-color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+</style>
 </head>
 <body>
-  <button id="enter-vr">Войти в VR</button>
 
-  <!-- Подключение Three.js -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<button id="enter-vr">Войти в VR</button>
 
-  <script>
-    let camera, scene, renderer;
-    let cube;
+<!-- Подключение Three.js -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
-    init();
-    animate();
+<script>
+let camera, scene, renderer, cube;
 
-    function init() {
-      // Создаем сцену
-      scene = new THREE.Scene();
+init();
+animate();
 
-      // Создаем камеру
-      camera = new THREE.PerspectiveCamera(
-        70,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        1000
-      );
-      camera.position.z = 1;
+function init() {
+  // Создаем сцену
+  scene = new THREE.Scene();
 
-      // Создаем рендерер с поддержкой XR
-      renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.xr.enabled = true; // Включаем XR
-      document.body.appendChild(renderer.domElement);
+  // Создаем камеру
+  camera = new THREE.PerspectiveCamera(
+    70,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+  );
+  camera.position.z = 1;
 
-      // Добавляем куб
-      const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-      const material = new THREE.MeshNormalMaterial();
-      cube = new THREE.Mesh(geometry, material);
-      scene.add(cube);
+  // Создаем рендерер с поддержкой XR
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.xr.enabled = true; // Включаем XR
+  document.body.appendChild(renderer.domElement);
 
-      // Обработка изменения размера окна
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
+  // Добавляем куб
+  const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+  const material = new THREE.MeshNormalMaterial();
+  cube = new THREE.Mesh(geometry, material);
+  scene.add(cube);
 
-      // Кнопка для входа в VR
-      document.getElementById('enter-vr').addEventListener('click', () => {
-        if (navigator.xr) {
-          navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
-            if (supported) {
-              renderer.xr.requestSession('immersive-vr').then((session) => {
-                renderer.xr.setSession(session);
-              });
-            } else {
-              alert('VR не поддерживается на этом устройстве');
-            }
-          });
-        } else {
-          alert('WebXR не поддерживается браузером');
-        }
-      });
+  // Обработка изменения размера окна
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // Обработчик кнопки входа в VR
+  document.getElementById('enter-vr').addEventListener('click', () => {
+    if (navigator.xr) {
+      console.log('navigator.xr есть');
+      navigator.xr.isSessionSupported('immersive-vr')
+        .then((supported) => {
+          console.log('Поддержка immersive-vr:', supported);
+          if (supported) {
+            return navigator.xr.requestSession('immersive-vr');
+          } else {
+            alert('VR не поддерживается на этом устройстве или браузере.');
+            throw new Error('immersive-vr не поддерживается');
+          }
+        })
+        .then((session) => {
+          console.log('VR-сессия запущена:', session);
+          renderer.xr.setSession(session);
+        })
+        .catch((err) => {
+          console.error('Ошибка при запуске VR-сессии:', err);
+          alert('Не удалось запустить VR-сессию. Проверьте поддержку и настройки браузера.');
+        });
+    } else {
+      alert('WebXR не поддерживается этим браузером.');
+      console.log('navigator.xr отсутствует');
     }
+  });
+}
 
-    function animate() {
-      renderer.setAnimationLoop(render);
-    }
+function animate() {
+  renderer.setAnimationLoop(render);
+}
 
-    function render() {
-      // Вращаем куб
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
+function render() {
+  // Вращение куба
+  cube.rotation.x += 0.01;
+  cube.rotation.y += 0.01;
 
-      renderer.render(scene, camera);
-    }
-  </script>
+  renderer.render(scene, camera);
+}
+</script>
+
 </body>
 </html>
