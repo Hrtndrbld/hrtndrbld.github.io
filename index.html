@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Простая VR-сцена (оптимизировано для Poco F6)</title>
+    <!-- A-Frame 1.4.0 + WebXR Polyfill для старых устройств -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.min.js"></script>
+    <script>
+        // Инициализация полифила WebXR для старых браузеров
+        if (navigator.xr === undefined) {
+            new WebXRPolyfill();
+        }
+    </script>
+</head>
+<body>
+    <a-scene 
+        vr-mode-ui="enabled: true" 
+        device-orientation-permission-ui="enabled: true"
+        xr-mode
+    >
+        <!-- Красный куб -->
+        <a-box position="-1 0.5 -3" rotation="0 45 0" color="#FF0000"></a-box>
+        <!-- Синяя сфера -->
+        <a-sphere position="0 1.25 -5" radius="1.25" color="#0000FF"></a-sphere>
+        <!-- Зелёный пол -->
+        <a-plane 
+            position="0 0 -4" 
+            rotation="-90 0 0" 
+            width="10" 
+            height="10" 
+            color="#00FF00"
+        ></a-plane>
+        <!-- Фон (небо) -->
+        <a-sky color="#87CEEB"></a-sky>
+
+        <!-- Текст-подсказка для мобильных -->
+        <a-entity 
+            position="0 1.8 -3" 
+            text="value: Нажмите иконку очков для VR; align: center; color: black"
+            scale="2 2 2"
+        ></a-entity>
+    </a-scene>
+
+    <!-- Скрипт для проверки поддержки WebXR -->
+    <script>
+        document.querySelector('a-scene').addEventListener('loaded', function() {
+            if (!navigator.xr) {
+                alert("Ваш браузер не поддерживает WebXR. Попробуйте Chrome или Firefox.");
+            }
+        });
+    </script>
+</body>
+</html>
