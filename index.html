@@ -3,61 +3,56 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>VR сцена с видимой кнопкой в очках</title>
+  <title>VR сцена с улучшенной кнопкой</title>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1.4.0/dist/aframe-master.min.js"></script>
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
+    body { 
+      margin: 0; 
+      overflow: hidden; 
       font-family: Arial, sans-serif;
     }
-    a-scene {
-      display: block;
-      width: 100vw;
-      height: 100vh;
-    }
-    #vr-ui {
-      position: fixed;
-      bottom: 20px;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      z-index: 100000;
-      pointer-events: none;
+    a-scene { 
+      display: block; 
+      width: 100vw; 
+      height: 100vh; 
     }
     #vr-button {
-      pointer-events: auto;
-      padding: 15px 30px;
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
       background: #4285F4;
       color: white;
       border: none;
-      border-radius: 30px;
-      font-size: 18px;
+      border-radius: 24px;
+      font-size: 16px;
       font-weight: bold;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      z-index: 9999;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       cursor: pointer;
       transition: all 0.3s ease;
-      opacity: 0.9;
     }
     #vr-button.vr-active {
       background: #EA4335;
+    }
+    #vr-button:hover {
+      transform: translateX(-50%) scale(1.05);
+    }
+    #vr-button:active {
+      transform: translateX(-50%) scale(0.95);
     }
   </style>
 </head>
 <body>
   <a-scene 
-    vr-mode-ui="enabled: false"
+    vr-mode-ui="enabled: false" <!-- Отключаем стандартную кнопку -->
     renderer="antialias: true; colorManagement: true"
-    webxr="
-      optionalFeatures: local-floor; 
-      referenceSpaceType: local-floor;
-      overlayElement: #vr-ui
-    "
+    webxr="optionalFeatures: local-floor; referenceSpaceType: local-floor"
     loading-screen="enabled: false"
   >
-
-    <!-- 3D сцена -->
+    <!-- 3D объекты -->
     <a-box position="0 1.5 -2" color="#4CC3D9" rotation="0 45 0"></a-box>
     <a-plane position="0 0 -4" rotation="-90 0 0" width="20" height="20" color="#7BC8A4"></a-plane>
     <a-sky color="#ECECEC"></a-sky>
@@ -67,93 +62,57 @@
       look-controls
       position="0 1.6 0"
     ></a-entity>
-
-    <!-- VR-кнопка как часть 3D сцены -->
-    <a-entity id="vr-scene-button" visible="false">
-      <a-text 
-        value="ВЫЙТИ ИЗ VR"
-        position="0 -0.5 -1"
-        align="center"
-        width="5"
-        color="#EA4335"
-        opacity="0"
-      ></a-text>
-      <a-ring
-        color="#EA4335"
-        radius-inner="0.4"
-        radius-outer="0.5"
-        position="0 0 -1"
-        opacity="0"
-        material="shader: flat; transparent: true"
-      ></a-ring>
-    </a-entity>
   </a-scene>
 
-  <!-- HTML-кнопка для обычного режима -->
-  <div id="vr-ui">
-    <button id="vr-button">ВОЙТИ В VR</button>
-  </div>
+  <button id="vr-button">ВОЙТИ В VR</button>
 
   <script>
     const vrButton = document.getElementById('vr-button');
     const scene = document.querySelector('a-scene');
-    const vrSceneButton = document.getElementById('vr-scene-button');
-    const vrText = vrSceneButton.querySelector('a-text');
-    const vrRing = vrSceneButton.querySelector('a-ring');
 
-    // Показать/скрыть 3D кнопку
-    function updateVRButton(visible) {
-      if (visible) {
-        vrSceneButton.setAttribute('visible', 'true');
-        vrText.setAttribute('opacity', '1');
-        vrRing.setAttribute('opacity', '0.5');
+    // Инициализация
+    function initVR() {
+      if (navigator.xr) {
+        navigator.xr.isSessionSupported('immersive-vr').then(supported => {
+          vrButton.style.display = 'block';
+          if (!supported) {
+            console.log("Используется режим Cardboard");
+          }
+        }).catch(err => {
+          console.warn("Ошибка проверки WebXR:", err);
+          vrButton.style.display = 'block'; // Все равно показываем кнопку
+        });
       } else {
-        vrSceneButton.setAttribute('visible', 'false');
-        vrText.setAttribute('opacity', '0');
-        vrRing.setAttribute('opacity', '0');
+        console.warn("WebXR не поддерживается");
+        vrButton.style.display = 'block';
       }
     }
 
-    // Обработчик клика по 3D кнопке
-    vrSceneButton.addEventListener('click', function() {
-      scene.exitVR();
-    });
-
-    // Обработчик HTML-кнопки
+    // Обработчик кнопки
     vrButton.addEventListener('click', function() {
       if (scene.is('vr-mode')) {
         scene.exitVR();
       } else {
         scene.enterVR().catch(err => {
-          console.error("Ошибка входа в VR:", err);
+          console.error("Ошибка VR:", err);
         });
       }
     });
 
-    // События VR
+    // Обработчики событий VR
     scene.addEventListener('enter-vr', () => {
       vrButton.textContent = 'ВЫЙТИ ИЗ VR';
       vrButton.classList.add('vr-active');
-      updateVRButton(true);
+      // Не скрываем кнопку в VR-режиме
     });
 
     scene.addEventListener('exit-vr', () => {
       vrButton.textContent = 'ВОЙТИ В VR';
       vrButton.classList.remove('vr-active');
-      updateVRButton(false);
     });
 
-    // Инициализация
-    window.addEventListener('load', () => {
-      // Проверка поддержки WebXR не обязательна, но может быть полезна для отладки
-      if (navigator.xr) {
-        navigator.xr.isSessionSupported('immersive-vr')
-          .then(() => vrButton.style.display = 'block')
-          .catch(() => vrButton.style.display = 'block');
-      } else {
-        vrButton.style.display = 'block';
-      }
-    });
+    // Инициализация при загрузке
+    window.addEventListener('load', initVR);
   </script>
 </body>
 </html>
